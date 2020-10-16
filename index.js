@@ -9,6 +9,9 @@ const { ByteSize, RandomNum, RoundNum } = require('trample/node');
 
 const TINYIMG_URL = ['tinyjpg.com', 'tinypng.com'];
 
+const inputPath = 'input'; // 输入路径
+const outPutPath = 'output'; // 输入路径
+
 function RandomHeader() {
   const ip = new Array(4)
     .fill(0)
@@ -67,12 +70,12 @@ async function CompressImg(path) {
     const oldSize = Chalk.redBright(ByteSize(obj.input.size));
     const newSize = Chalk.greenBright(ByteSize(obj.output.size));
     const ratio = Chalk.blueBright(RoundNum(1 - obj.output.ratio, 2, true));
-    const dpath = Path.join('img', Path.basename(path));
-    const msg = `${Figures.tick} Compressed [${Chalk.yellowBright(path)}] completed: Old Size ${oldSize}, New Size ${newSize}, Optimization Ratio ${ratio}`;
+    const dpath = Path.join(outPutPath, Path.basename(path));
+    const msg = `${Figures.tick} 压缩的 [${Chalk.yellowBright(path)}] completed: 原大小 ${oldSize}, 新大小 ${newSize}, 压缩百分比 ${ratio}`;
     Fs.writeFileSync(dpath, data, 'binary');
     return Promise.resolve(msg);
   } catch (err) {
-    const msg = `${Figures.cross} Compressed [${Chalk.yellowBright(path)}] failed: ${Chalk.redBright(err)}`;
+    const msg = `${Figures.cross} 压缩的 [${Chalk.yellowBright(path)}] 失败: ${Chalk.redBright(err)}`;
     return Promise.resolve(msg);
   }
 }
@@ -80,18 +83,16 @@ async function CompressImg(path) {
 (async () => {
   const spinner = Ora('压缩中......').start();
 
-  const pathName = 'input';
-  Fs.readdir(pathName, (err, files) => {
-    console.log('err :>> ', err);
-    console.log('file :>> ', files);
+  Fs.readdir(inputPath, (err, files) => {
     files.forEach((file) => {
-      Fs.stat(Path.join(pathName, file), async (err, data) => {
-        if (data.isFile()) {
-          // dirs.push(file);
-          console.log('file :>> ', file);
-          const res = await CompressImg(pathName+'/'+file);
-          console.log(res);
-        }
+      if (!/\w(\.gif|\.jpeg|\.png|\.jpg|\.bmp)/i.test(file)) {
+        return;
+      }
+      Fs.stat(Path.join(inputPath, file), async (err, data) => {
+          if (data.isFile()) {
+            const res = await CompressImg(inputPath+'/'+file);
+            console.log(res);
+          }
       });
     });
   });
